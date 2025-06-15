@@ -13,7 +13,16 @@ namespace OneBeyondApi.DataAccess
 		{
 			using (var context = new LibraryContext())
 			{
-				return context.Reservations.Where(x => x.Book.Id == bookId)?.Max(x => x.ReservationEndTime) ?? DateTime.UtcNow;
+				var reservations = context.Reservations.Where(x => x.Book.Id == bookId);
+				if (reservations.Any())
+				{
+					return reservations.Max(x => x.ReservationEndTime);
+				}
+				else
+				{
+					// should we check here if book exists?
+					return context.Catalogue.FirstOrDefault(x => x.Book.Id == bookId)?.LoanEndDate ?? DateTime.UtcNow;
+				}
 			}
 		}
 
@@ -33,6 +42,7 @@ namespace OneBeyondApi.DataAccess
 					ReservationEndTime = lastReservationEndTime.AddDays(days),
 				}
 				);
+				context.SaveChanges();
 			}
 		}
 	}
