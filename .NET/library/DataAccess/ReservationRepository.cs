@@ -21,14 +21,10 @@ namespace OneBeyondApi.DataAccess
 		{
 			using (var context = new LibraryContext())
 			{
-				var book = context.Books.FirstOrDefault(x => x.Id == bookId);
-				var borrower = context.Borrowers.FirstOrDefault(x => x.Id == borrowerId);
-				// Could assume we can only place reservations when the book is loaned
+				// Will assume we can only place reservations when the book is loaned as per the requirements
+				var book = context.Books.First(x => x.Id == bookId);
+				var borrower = context.Borrowers.First(x => x.Id == borrowerId);
 				var lastReservationEndTime = GetNextAvailability(bookId);
-				if (book == null || borrower == null)
-				{
-					throw new Exception("Invalid data provided");
-				}
 				context.Reservations.Add(new Reservation
 				{
 					Book = book,
