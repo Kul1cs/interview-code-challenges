@@ -21,7 +21,18 @@ namespace OneBeyondApi.DataAccess
             }
         }
 
-        public List<BookStock> SearchCatalogue(CatalogueSearch search)
+		public BookStock GetBookStockByBookAndBorrower(Guid bookId, Guid borrowerId)
+		{
+			using (var context = new LibraryContext())
+			{
+				return context.Catalogue
+                    .Include(x => x.Book)
+					.Include(x => x.OnLoanTo)
+					.First(x => x.Book.Id == bookId && x.OnLoanTo.Id == borrowerId);
+			}
+		}
+
+		public List<BookStock> SearchCatalogue(CatalogueSearch search)
         {
             using (var context = new LibraryContext())
             {
