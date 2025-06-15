@@ -22,33 +22,39 @@ namespace OneBeyondApi.DataAccess
 			}
 		}
 
-		public void AddFine(Fine fine)
+		public Fine ReturnLoan(Guid bookStockId)
 		{
 			using (var context = new LibraryContext())
 			{
-				context.Fines.Add(fine);
-				context.SaveChanges();
-			}
-		}
-
-		public void ReturnLoan(BookStock bookStock)
-		{
-			using (var context = new LibraryContext())
-			{
-				context.Attach(bookStock);
-				var nextReservation = context.Reservations.OrderBy(x => x.ReservationStartTime).FirstOrDefault();
-				if (nextReservation != null)
+				var bookStock = context.Catalogue.First(x => x.Id == bookStockId);
+				var currentTime = DateTime.UtcNow;
+				Fine fine = null;
+				if (bookStock.LoanEndDate.HasValue && bookStock.LoanEndDate < currentTime)
 				{
-					bookStock.LoanEndDate = nextReservation.ReservationEndTime;
-					bookStock.OnLoanTo = nextReservation.Borrower;
-					context.Reservations.Remove(nextReservation);
+					fine = new Fine
+					{
+						Amount = (currentTime - bookStock.LoanEndDate).Value.Days * 10,
+						Book = bookStock.Book,
+						Borrower = bookStock.OnLoanTo,
+						LoanEndDate = bookStock.LoanEndDate.Value,
+						ReturnedOnDate = currentTime
+					};
+					context.Fines.Add(fine);
+					var nextReservation = context.Reservations.OrderBy(x => x.ReservationStartTime).FirstOrDefault();
+					if (nextReservation != null)
+					{
+						bookStock.LoanEndDate = nextReservation.ReservationEndTime;
+						bookStock.OnLoanTo = nextReservation.Borrower;
+						context.Reservations.Remove(nextReservation);
+					}
+					else
+					{
+						bookStock.LoanEndDate = null;
+						bookStock.OnLoanTo = null;
+					}
+					context.SaveChanges();
 				}
-				else
-				{
-					bookStock.LoanEndDate = null;
-					bookStock.OnLoanTo = null;
-				}
-				context.SaveChanges();
+				return fine;
 			}
 		}
 	}
